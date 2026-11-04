@@ -56,12 +56,12 @@
     <label for="phone">Telefoon <small id="phoneNote">(niet verplicht)</small></label>
     <input id="phone" type="tel" autocomplete="tel">
     <div id="groupField" class="hidden">
-      <label for="group">Rot</label>
+      <label for="group">Rotte</label>
       <select id="group"></select>
       <div class="hint hidden" id="groupHint">De starttijden hoor je later van de wedstrijdleiding.</div>
     </div>
     <label for="remark">Opmerking <small>(niet verplicht)</small></label>
-    <textarea id="remark" maxlength="500" placeholder="Bijvoorbeeld: graag in dezelfde rot als ..."></textarea>
+    <textarea id="remark" maxlength="500" placeholder="Bijvoorbeeld: graag in dezelfde rotte als ..."></textarea>
     <button class="go" id="go">Inschrijven</button>
     <div class="msg" id="msg"></div>
   </div>
@@ -127,11 +127,11 @@
     if (info.self_squad && info.groups && info.groups.length) {
       $('groupField').classList.remove('hidden');
       const sel = $('group');
-      sel.innerHTML = '<option value="">Kies een rot…</option>';
+      sel.innerHTML = '<option value="">Kies een rotte…</option>';
       for (const g of info.groups) {
         const o = document.createElement('option');
         o.value = g.id;
-        o.textContent = String(g.name).replace(/^(Groep|Rotte) (?=\d+$)/, 'Rot ') + (g.time ? ' · ' + g.time : '') + (g.free > 0 ? ' (' + g.free + ' vrij)' : ' (vol)');
+        o.textContent = String(g.name).replace(/^(Groep|Rot) (?=\d+$)/, 'Rotte ') + (g.time ? ' · ' + g.time : '') + (g.free > 0 ? ' (' + g.free + ' vrij)' : ' (vol)');
         o.disabled = g.free <= 0;
         sel.appendChild(o);
       }
@@ -148,7 +148,7 @@
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return (msg.textContent = 'Vul een geldig e-mailadres in.');
     if (full && $('phone').value.replace(/\D/g, '').length < 9) return (msg.textContent = 'De wedstrijd is vol. Vul je telefoonnummer in, dan appen we je als er een plek vrijkomt.');
     const needGroup = !$('groupField').classList.contains('hidden');
-    if (needGroup && !$('group').value) return (msg.textContent = 'Kies een rot.');
+    if (needGroup && !$('group').value) return (msg.textContent = 'Kies een rotte.');
     msg.textContent = '';
     $('go').disabled = true;
     try {
