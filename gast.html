@@ -83,7 +83,9 @@
 <script>
   const URL_ = 'https://rlpgcipomtxtkvfvgnes.supabase.co/rest/v1/rpc/';
   const KEY = 'sb_publishable_zx1rfgkJwfdoZ9QvdMzkmA_KbcBQ3pb';
-  const CLUB = new URLSearchParams(location.search).get('club') || '1';
+  const params = new URLSearchParams(location.search);
+  const CLUB = params.get('club') || '1';
+  const CODE = params.get('c') || '';
   let isMember = false;
 
   async function rpc(name, body) {
@@ -107,6 +109,11 @@
     $('segHint').textContent = v
       ? 'Je schiet als lid van een andere vereniging.'
       : 'Je schiet als introducé. Neem je legitimatie mee naar de baanbeheerder.';
+  }
+  if (!CODE) {
+    $('msg').className = 'msg err';
+    $('msg').textContent = 'Deze link is niet compleet. Scan de QR-code op de bar.';
+    $('go').disabled = true;
   }
   $('ja').onclick = () => setMember(true);
   $('nee').onclick = () => setMember(false);
@@ -145,6 +152,7 @@
         p_association: isMember ? $('assoc').value.trim() : '',
         p_knsa_number: isMember ? $('knsa').value.trim() : '',
         p_introduced_by: isMember ? null : $('intro').value,
+        p_code: CODE,
       });
       $('form').classList.add('hidden');
       $('done').classList.remove('hidden');
