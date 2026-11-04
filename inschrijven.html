@@ -26,6 +26,7 @@
   .msg { margin-top:14px; font-weight:600; color:var(--err); }
   .done { text-align:center; padding:30px 10px; }
   .done .big { font-size:48px; }
+  .hint { color:var(--m); font-size:13px; margin-top:6px; }
   .hidden { display:none; }
 </style>
 </head>
@@ -55,8 +56,9 @@
     <label for="phone">Telefoon <small>(niet verplicht)</small></label>
     <input id="phone" type="tel" autocomplete="tel">
     <div id="groupField" class="hidden">
-      <label for="group">Rot / starttijd</label>
+      <label for="group">Rot</label>
       <select id="group"></select>
+      <div class="hint hidden" id="groupHint">De starttijden hoor je later van de wedstrijdleiding.</div>
     </div>
     <label for="remark">Opmerking <small>(niet verplicht)</small></label>
     <textarea id="remark" maxlength="500" placeholder="Bijvoorbeeld: graag in dezelfde rot als ..."></textarea>
@@ -126,10 +128,11 @@
       for (const g of info.groups) {
         const o = document.createElement('option');
         o.value = g.id;
-        o.textContent = g.name + (g.time ? ' · ' + g.time : '') + (g.free > 0 ? ' (' + g.free + ' vrij)' : ' (vol)');
+        o.textContent = String(g.name).replace(/^(Groep|Rotte) (?=\d+$)/, 'Rot ') + (g.time ? ' · ' + g.time : '') + (g.free > 0 ? ' (' + g.free + ' vrij)' : ' (vol)');
         o.disabled = g.free <= 0;
         sel.appendChild(o);
       }
+      if (!info.groups.some((g) => g.time)) $('groupHint').classList.remove('hidden');
     }
   }
 
