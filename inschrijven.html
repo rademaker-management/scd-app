@@ -44,6 +44,182 @@
     <input id="assoc">
     <div class="row">
       <div><label for="knsa">KNSA-nummer <small>(niet verplicht)</small></label><input id="knsa" inputmode="numeric"></div>
+      <div><label for="klasse">Klasse <small>(niet verplicht)</small></label><select id="klasse">
+        <option value="">Weet ik niet</option>
+        <option>AA</option><option>A</option><option>B</option>
+        <option>C</option><option>D</option><option>E</option>
+      </select></div>
+    </div>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="email">
+    <label for="phone">Telefoon <small>(niet verplicht)</small></label>
+    <input id="phone" type="tel" autocomplete="tel">
+    <div id="groupField" class="hidden">
+      <label for="group">Rot / starttijd</label>
+      <select id="group"></select>
+    </div>
+    <label for="remark">Opmerking <small>(niet verplicht)</small></label>
+    <textarea id="remark" maxlength="500" placeholder="Bijvoorbeeld: graag in dezelfde rot als ..."></textarea>
+    <button class="go" id="go">Inschrijven</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card done hidden" id="done">
+    <div class="big">✓</div>
+    <h2 id="doneTitle">Je bent ingeschreven</h2>
+    <p id="doneText">Tot op de baan!</p>
+  </div>
+</main>
+
+<script>
+  const URL_ = 'https://rlpgcipomtxtkvfvgnes.supabase.co/rest/v1/rpc/';
+  const KEY = 'sb_publishable_zx1rfgkJwfdoZ9QvdMzkmA_KbcBQ3pb';
+  const TOKEN = new URLSearchParams(location.search).get('w') || '';
+  const $ = (id) => document.getElementById(id);
+  let info = null;
+
+  async function rpc(name, body) {
+    const r = await fetch(URL_ + name, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => null);
+    if (!r.ok) throw new Error((data && data.message) || 'Er ging iets mis');
+    return data;
+  }
+
+  function closed(text) {
+    $('form').innerHTML = '<p>' + text + '</p>';
+  }
+
+  function pill(text) {
+    const s = document.createElement('span');
+    s.className = 'pill'; s.textContent = text;
+    $('pills').appendChild(s);
+  }
+
+  async function load() {
+    if (!TOKEN) return closed('Deze link is niet compleet.');
+    try {
+      info = await rpc('registration_info', { p_token: TOKEN });
+    } catch (e) {
+      return closed(e.message);
+    }
+    $('title').textContent = 'Inschrijven: ' + info.name;
+    document.title = 'Inschrijven ' + info.name + ' · SCD Delfzijl';
+    const d = new Date(info.date);
+    pill(d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+    if (info.max) {
+      const left = info.max - info.count;
+      pill(left > 0 ? left + ' plekken vrij' : 'Vol, je komt op de wachtlijst');
+    }
+    if (info.fee) pill('Inschrijfgeld € ' + Number(info.fee).toFixed(2).replace('.', ','));
+    if (info.closes) {
+      pill('Sluit ' + new Date(info.closes).toLocaleString('nl-NL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
+    }
+    if (!info.open) return closed('De inschrijving voor deze wedstrijd is gesloten.');
+    if (info.self_squad && info.groups && info.groups.length) {
+      $('groupField').classList.remove('hidden');
+      const sel = $('group');
+      sel.innerHTML = '<option value="">Kies een rot…</option>';
+      for (const g of info.groups) {
+        const o = document.createElement('option');
+        o.value = g.id;
+        o.textContent = g.name + (g.time ? ' · ' + g.time : '') + (g.free > 0 ? ' (' + g.free + ' vrij)' : ' (vol)');
+        o.disabled = g.free <= 0;
+        sel.appendChild(o);
+      }
+    }
+  }
+
+  $('go').onclick = async () => {
+    const msg = $('msg');
+    const first = $('first').value.trim(), last = $('last').value.trim();
+    const email = $('email').value.trim();
+    if (!first || !last) return (msg.textContent = 'Vul je voor- en achternaam in.');
+    if (!$('assoc').value.trim()) return (msg.textContent = 'Vul je vereniging in.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return (msg.textContent = 'Vul een geldig e-mailadres in.');
+    const needGroup = !$('groupField').classList.contains('hidden');
+    if (needGroup && !$('group').value) return (msg.textContent = 'Kies een rot.');
+    msg.textContent = '';
+    $('go').disabled = true;
+    try {
+      const r = await rpc('register_competition', {
+        p_token: TOKEN,
+        p_competition_id: null,
+        p_first_name: first,
+        p_last_name: last,
+        p_association: $('assoc').value.trim(),
+        p_knsa_number: $('knsa').value.trim(),
+        p_member_class: $('klasse').value,
+        p_email: email,
+        p_phone: $('phone').value.trim(),
+        p_remark: $('remark').value.trim(),
+        p_group_id: needGroup ? $('group').value : null,
+      });
+      $('form').classList.add('hidden');
+      $('done').classList.remove('hidden');
+      if (r.status === 'waitlist') {
+        $('doneTitle').textContent = 'Je staat op de wachtlijst';
+        $('doneText').textContent = 'Je bent nummer ' + r.position + ' op de wachtlijst. Valt er iemand af, dan schuif je automatisch door.';
+      }
+    } catch (e) {
+      msg.textContent = e.message;
+      $('go').disabled = false;
+    }
+  };
+
+  load();
+</script>
+</body>
+</html>
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inschrijven · SCD Delfzijl</title>
+<meta property="og:title" content="Inschrijven bij Sportschietcentrum Delfzijl">
+<meta property="og:description" content="Schrijf je direct in voor de wedstrijd.">
+<style>
+  :root { --p:#0b7f93; --bg:#f3f7f8; --card:#fff; --t:#13262b; --m:#5b6b70; --err:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--t); }
+  main { max-width:520px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:24px; margin:8px 0 4px; }
+  .sub { color:var(--m); margin:0 0 6px; }
+  .pill { display:inline-block; background:#e3f1f3; color:var(--p); border-radius:999px; padding:4px 10px; font-size:13px; font-weight:600; margin:4px 4px 12px 0; }
+  .card { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  label { display:block; font-weight:600; font-size:14px; margin:14px 0 6px; }
+  label small { font-weight:400; color:var(--m); }
+  input, select, textarea { width:100%; font-size:17px; padding:12px; border:1px solid #c7d3d6; border-radius:10px; background:#fff; color:var(--t); font-family:inherit; }
+  textarea { min-height:70px; }
+  .row { display:flex; gap:8px; }
+  .row > * { flex:1; }
+  button.go { width:100%; margin-top:20px; font-size:18px; font-weight:700; padding:14px; border:0; border-radius:12px; background:var(--p); color:#fff; }
+  button.go:disabled { opacity:.6; }
+  .msg { margin-top:14px; font-weight:600; color:var(--err); }
+  .done { text-align:center; padding:30px 10px; }
+  .done .big { font-size:48px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Inschrijven</h1>
+  <p class="sub">Sportschietcentrum Delfzijl</p>
+  <div id="pills"></div>
+
+  <div class="card" id="form">
+    <div class="row">
+      <div><label for="first">Voornaam</label><input id="first" autocomplete="given-name"></div>
+      <div><label for="last">Achternaam</label><input id="last" autocomplete="family-name"></div>
+    </div>
+    <label for="assoc">Vereniging</label>
+    <input id="assoc">
+    <div class="row">
+      <div><label for="knsa">KNSA-nummer <small>(niet verplicht)</small></label><input id="knsa" inputmode="numeric"></div>
       <div><label for="klasse">Klasse <small>(niet verplicht)</small></label><input id="klasse"></div>
     </div>
     <label for="email">E-mail</label>
