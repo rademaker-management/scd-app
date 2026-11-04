@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aanmelden als gast · SCD Delfzijl</title>
+<style>
+  :root { --p:#0b7f93; --bg:#f3f7f8; --card:#fff; --t:#13262b; --m:#5b6b70; --err:#b3261e; --ok:#1e7d3a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--t); }
+  main { max-width:480px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:24px; margin:8px 0 4px; }
+  p.sub { color:var(--m); margin:0 0 18px; }
+  .card { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  label { display:block; font-weight:600; font-size:14px; margin:14px 0 6px; }
+  input, select { width:100%; font-size:17px; padding:12px; border:1px solid #c7d3d6; border-radius:10px; background:#fff; color:var(--t); }
+  .seg { display:flex; gap:8px; }
+  .seg button { flex:1; font-size:16px; padding:12px; border-radius:10px; border:1px solid #c7d3d6; background:#fff; color:var(--t); }
+  .seg button.on { background:var(--p); color:#fff; border-color:var(--p); }
+  .hint { color:var(--m); font-size:13px; margin-top:6px; }
+  .row { display:flex; gap:8px; }
+  .row > * { flex:1; }
+  button.go { width:100%; margin-top:20px; font-size:18px; font-weight:700; padding:14px; border:0; border-radius:12px; background:var(--p); color:#fff; }
+  button.go:disabled { opacity:.6; }
+  .msg { margin-top:14px; font-weight:600; }
+  .msg.err { color:var(--err); }
+  .done { text-align:center; padding:30px 10px; }
+  .done .big { font-size:48px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Welkom bij SCD Delfzijl</h1>
+  <p class="sub">Meld je aan als gast. Daarna tekent de baanbeheerder je af.</p>
+
+  <div class="card" id="form">
+    <label>Ben je lid van een schietvereniging?</label>
+    <div class="seg">
+      <button type="button" id="ja">Ja</button>
+      <button type="button" id="nee" class="on">Nee</button>
+    </div>
+    <div class="hint" id="segHint">Je schiet als introducé. Neem je legitimatie mee naar de baanbeheerder.</div>
+
+    <div class="row">
+      <div><label for="first">Voornaam</label><input id="first" autocomplete="given-name"></div>
+      <div><label for="last">Achternaam</label><input id="last" autocomplete="family-name"></div>
+    </div>
+
+    <label>Geboortedatum</label>
+    <div class="row">
+      <input id="dd" inputmode="numeric" placeholder="dd" maxlength="2">
+      <input id="mm" inputmode="numeric" placeholder="mm" maxlength="2">
+      <input id="yy" inputmode="numeric" placeholder="jjjj" maxlength="4">
+    </div>
+
+    <label for="res">Woonplaats</label>
+    <input id="res" autocomplete="address-level2">
+
+    <div id="memberFields" class="hidden">
+      <label for="assoc">Vereniging</label>
+      <input id="assoc">
+      <label for="knsa">KNSA-lidnummer <span style="font-weight:400;color:var(--m)">(niet verplicht)</span></label>
+      <input id="knsa" inputmode="numeric">
+    </div>
+
+    <div id="introFields">
+      <label for="intro">Wie introduceert je?</label>
+      <select id="intro"><option value="">Kies een lid…</option></select>
+    </div>
+
+    <button class="go" id="go">Aanmelden</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card done hidden" id="done">
+    <div class="big">✓</div>
+    <h2 id="doneTitle">Je bent aangemeld</h2>
+    <p id="doneText">Meld je bij de baanbeheerder. Die tekent je af.</p>
+  </div>
+</main>
+
+<script>
+  const URL_ = 'https://rlpgcipomtxtkvfvgnes.supabase.co/rest/v1/rpc/';
+  const KEY = 'sb_publishable_zx1rfgkJwfdoZ9QvdMzkmA_KbcBQ3pb';
+  const CLUB = new URLSearchParams(location.search).get('club') || '1';
+  let isMember = false;
+
+  async function rpc(name, body) {
+    const r = await fetch(URL_ + name, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => null);
+    if (!r.ok) throw new Error((data && data.message) || 'Aanmelden is niet gelukt');
+    return data;
+  }
+
+  const $ = (id) => document.getElementById(id);
+  function setMember(v) {
+    isMember = v;
+    $('ja').classList.toggle('on', v);
+    $('nee').classList.toggle('on', !v);
+    $('memberFields').classList.toggle('hidden', !v);
+    $('introFields').classList.toggle('hidden', v);
+    $('segHint').textContent = v
+      ? 'Je schiet als lid van een andere vereniging.'
+      : 'Je schiet als introducé. Neem je legitimatie mee naar de baanbeheerder.';
+  }
+  $('ja').onclick = () => setMember(true);
+  $('nee').onclick = () => setMember(false);
+
+  rpc('guest_introducers', { p_club_id: CLUB }).then((rows) => {
+    for (const m of rows || []) {
+      const o = document.createElement('option');
+      o.value = m.id; o.textContent = m.name;
+      $('intro').appendChild(o);
+    }
+  }).catch(() => {});
+
+  $('go').onclick = async () => {
+    const msg = $('msg');
+    msg.className = 'msg err';
+    const d = +$('dd').value, mo = +$('mm').value, y = +$('yy').value;
+    const birth = new Date(y, mo - 1, d);
+    const valid = y > 1900 && birth.getDate() === d && birth.getMonth() === mo - 1 && birth < new Date();
+    const first = $('first').value.trim(), last = $('last').value.trim(), res = $('res').value.trim();
+    if (!first || !last) return (msg.textContent = 'Vul je voor- en achternaam in.');
+    if (!valid) return (msg.textContent = 'Controleer je geboortedatum.');
+    if (!res) return (msg.textContent = 'Vul je woonplaats in.');
+    if (isMember && !$('assoc').value.trim()) return (msg.textContent = 'Vul je vereniging in.');
+    if (!isMember && !$('intro').value) return (msg.textContent = 'Kies wie je introduceert.');
+    msg.textContent = '';
+    $('go').disabled = true;
+    const pad = (n) => String(n).padStart(2, '0');
+    try {
+      const r = await rpc('guest_checkin', {
+        p_club_id: CLUB,
+        p_first_name: first,
+        p_last_name: last,
+        p_birth_date: `${y}-${pad(mo)}-${pad(d)}`,
+        p_residence: res,
+        p_is_member: isMember,
+        p_association: isMember ? $('assoc').value.trim() : '',
+        p_knsa_number: isMember ? $('knsa').value.trim() : '',
+        p_introduced_by: isMember ? null : $('intro').value,
+      });
+      $('form').classList.add('hidden');
+      $('done').classList.remove('hidden');
+      if (!isMember && r && r.visits >= 3) {
+        $('doneTitle').textContent = 'Aangemeld, maar let op';
+        $('doneText').textContent = 'Je hebt de afgelopen 12 maanden al 3 keer als introducé geschoten. Vraag de baanbeheerder wat er mogelijk is.';
+      }
+    } catch (e) {
+      msg.textContent = e.message;
+      $('go').disabled = false;
+    }
+  };
+</script>
+</body>
+</html>
