@@ -115,7 +115,7 @@
     pill(d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
     if (info.max) {
       const left = info.max - info.count;
-      pill(left > 0 ? left + ' plekken vrij' : 'Vol, je komt op de wachtlijst');
+      pill(left > 0 ? left + (left === 1 ? ' plek vrij' : ' plekken vrij') : 'Vol, je komt op de wachtlijst');
       full = left <= 0;
       // Telefoon is altijd verplicht.
     }
