@@ -53,7 +53,7 @@
     </div>
     <label for="email">E-mail</label>
     <input id="email" type="email" autocomplete="email">
-    <label for="phone">Telefoon <small id="phoneNote">(niet verplicht)</small></label>
+    <label for="phone">Telefoon</label>
     <input id="phone" type="tel" autocomplete="tel">
     <div id="groupField" class="hidden">
       <label for="group">Rotte</label>
@@ -117,7 +117,7 @@
       const left = info.max - info.count;
       pill(left > 0 ? left + ' plekken vrij' : 'Vol, je komt op de wachtlijst');
       full = left <= 0;
-      if (full) $('phoneNote').textContent = '(nodig voor de wachtlijst)';
+      // Telefoon is altijd verplicht.
     }
     if (info.fee) pill('Inschrijfgeld € ' + Number(info.fee).toFixed(2).replace('.', ','));
     if (info.closes) {
@@ -146,7 +146,7 @@
     if (!first || !last) return (msg.textContent = 'Vul je voor- en achternaam in.');
     if (!$('assoc').value.trim()) return (msg.textContent = 'Vul je vereniging in.');
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return (msg.textContent = 'Vul een geldig e-mailadres in.');
-    if (full && $('phone').value.replace(/\D/g, '').length < 9) return (msg.textContent = 'De wedstrijd is vol. Vul je telefoonnummer in, dan appen we je als er een plek vrijkomt.');
+    if ($('phone').value.replace(/\D/g, '').length < 9) return (msg.textContent = 'Vul je telefoonnummer in.');
     const needGroup = !$('groupField').classList.contains('hidden');
     if (needGroup && !$('group').value) return (msg.textContent = 'Kies een rotte.');
     msg.textContent = '';
