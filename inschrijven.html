@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inschrijven · SCD Delfzijl</title>
+<title>Inschrijven · Kleibreker</title>
 <meta property="og:title" content="Inschrijven bij Sportschietcentrum Delfzijl">
 <meta property="og:description" content="Schrijf je direct in voor de wedstrijd.">
 <style>
@@ -110,7 +110,7 @@
       return closed(e.message);
     }
     $('title').textContent = 'Inschrijven: ' + info.name;
-    document.title = 'Inschrijven ' + info.name + ' · SCD Delfzijl';
+    document.title = 'Inschrijven ' + info.name + ' · Kleibreker';
     const d = new Date(info.date);
     pill(d.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
     if (info.max) {
