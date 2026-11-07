@@ -124,7 +124,7 @@
       pill('Sluit ' + new Date(info.closes).toLocaleString('nl-NL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
     }
     if (!info.open) return closed('De inschrijving voor deze wedstrijd is gesloten.');
-    if (info.self_squad && info.groups && info.groups.length) {
+    if (info.self_squad && info.groups && info.groups.length && !full) {
       $('groupField').classList.remove('hidden');
       const sel = $('group');
       sel.innerHTML = '<option value="">Kies een rotte…</option>';
@@ -169,7 +169,7 @@
       $('done').classList.remove('hidden');
       if (r.status === 'waitlist') {
         $('doneTitle').textContent = 'Je staat op de wachtlijst';
-        $('doneText').textContent = 'Je bent nummer ' + r.position + ' op de wachtlijst. Je hoeft nog niet te betalen. Valt er iemand af, dan schuif je automatisch door en appen we je.';
+        $('doneText').textContent = 'Je bent nummer ' + r.position + ' op de wachtlijst. Je hoeft nog niet te betalen. Valt er iemand af, dan schuif je automatisch door en appen we je.'; } else { const g = needGroup ? $('group').selectedOptions[0].textContent.replace(/ \(\d+ vrij\)$/, '') : ''; $('doneText').textContent = (g ? 'Je schiet in ' + g + '. ' : '') + (info.fee ? 'Het inschrijfgeld is € ' + Number(info.fee).toFixed(2).replace('.', ',') + '. ' : '') + 'Kun je toch niet? Laat het de wedstrijdleiding even weten. Tot op de baan!';
       }
     } catch (e) {
       msg.textContent = e.message;
