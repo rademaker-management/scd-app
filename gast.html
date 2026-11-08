@@ -118,7 +118,8 @@
   $('ja').onclick = () => setMember(true);
   $('nee').onclick = () => setMember(false);
 
-  rpc('guest_introducers', { p_club_id: CLUB }).then((rows) => {
+  // Namen alleen met een geldige code van de QR op de bar.
+  (CODE ? rpc('guest_introducers', { p_club_id: CLUB, p_code: CODE }) : Promise.resolve([])).then((rows) => {
     for (const m of rows || []) {
       const o = document.createElement('option');
       o.value = m.id; o.textContent = m.name;
